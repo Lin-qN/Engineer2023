@@ -1,0 +1,18 @@
+<launch>
+    <rosparam command="load" file="$(find exchange_recg)/cfg/params.yaml"/>
+    <node pkg="exchange_recg" type="exchange_recg_node" name="exchange_recg" output="screen" respawn="true"/>
+    <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen">
+        <param name="video_device" value="/dev/video0"/>
+        <param name="image_width" value="640"/>
+        <param name="image_height" value="480"/>
+        <param name="pixel_format" value="yuyv"/>
+        <param name="camera_frame_id" value="usb_cam"/>
+        <param name="io_method" value="mmap"/>
+        <param name="framerate" value="30"/>
+        <param name="brightness" value="0"/>
+        <remap from="/usb_cam/image_raw" to="/raw_img"/>
+    </node>
+    <node pkg="serial_robot" type="serial_robot_node" name="serial_robot_node" output="screen">
+        <remap from="/robot/exchange" to="/pose" />
+    </node>
+</launch>

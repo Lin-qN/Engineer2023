@@ -1,0 +1,16 @@
+if_red: True
+is_record: False
+if_show: True
+if_pub: True
+threshold: 10
+exposure: 50
+serial_name: /dev/ttyUSB0
+
+#camera: 2213
+CameraParams:
+    cx: 296.147773
+    cy: 243.416852
+    fx: 419.784604
+    fy: 420.409283
+    distcoef1: -0.006569
+    distcoef2: 0.012648

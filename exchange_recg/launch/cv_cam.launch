@@ -1,0 +1,13 @@
+<launch>
+
+    <node pkg="exchange_recg" type="exchange_recg_node" name="exchange_recg" output="screen" respawn="true"/>
+    <node pkg="cv_camera" type="cv_camera_node" name="cv_camera">
+        <remap from="/cv_camera/image_raw" to="/raw_img"/>
+    </node>
+    <node pkg="serial_robot" type="serial_robot_node" name="serial_robot" output="screen" respawn="true" />
+    <!--    <node pkg="mv_driver" type="mv_driver_node" name="mv_driver" output="screen" respawn="true" /> -->
+    <!-- <node pkg="serial_common" type="serial_common_node" name="serial_common_node" output="screen" />  -->
+
+    <rosparam command="load" file="$(find exchange_recg)/cfg/params.yaml"/>
+
+</launch>
