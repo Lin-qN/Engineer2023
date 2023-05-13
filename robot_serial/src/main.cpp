@@ -132,7 +132,7 @@ int main(int argc, char **argv) {
 
     std::string serial_name;
 
-    nh.param<std::string>("/serial_name", serial_name, "/dev/ttyUSB0");
+    nh.param<std::string>("/serial_name", serial_name, "/dev/ttyS5");
     std::cout << "Using serial port: " << serial_name << std::endl;
     serial = std::move(robot::RobotSerial(serial_name, 115200));
 

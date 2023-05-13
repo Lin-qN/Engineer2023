@@ -136,11 +136,11 @@ void getExchangePose(const sensor_msgs::ImageConstPtr &msg){
     if (ifShow || ifPub)
     {
         img2Show = img.clone();
-        img2Show = img2Show/1.5;
+        //img2Show = img2Show/1.5;
     }
 
 
-    bgr2binary(img, imgBin, 1, thresh, ifRed);
+    bgr2binary(img2Show, imgBin, 1, thresh, ifRed);
 
     if (ifShow) {
         //imshow("threshold", imgBin);
