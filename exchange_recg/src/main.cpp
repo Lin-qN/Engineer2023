@@ -166,6 +166,8 @@ void getExchangePose(const sensor_msgs::ImageConstPtr &msg){
         return;
     }
 
+    double theta;
+    double _sin;
     if (!man.empty()) {
         square s = man.getSquare(0);
         cout << "aux num: " << s.aux << endl;
@@ -184,11 +186,14 @@ void getExchangePose(const sensor_msgs::ImageConstPtr &msg){
             tvec.at<float>(2, 0) = -(float)_tvec.at<double>(1, 0);
 
             cout << rvec << endl;
-
-            Eigen::Vector3d rotation(rvec.at<double>(2, 0), rvec.at<double>(0, 0), rvec.at<double>(1, 0));
-            double angle = rotation.norm();
-            Eigen::Vector3d axis = rotation.normalized();
-            q = Eigen::Quaterniond(Eigen::AngleAxisd(angle, axis));
+            theta = cv::norm(rvec);
+            Eigen::Quaterniond _quat;
+//            _quat.w() = cos(theta * 0.5);
+            _sin = sin(theta * 0.5) / theta;
+//            _quat.x() = rvec.at<double>(0, 2) * _sin;
+//            _quat.y() = -rvec.at<double>(0, 0) * _sin;
+//            _quat.z() = -rvec.at<double>(0, 1) * _sin;
+//            auto angles = ToEulerAngles(_quat);
         } catch (cv::Exception &e) {
             ROS_ERROR("opencv exception: %s", e.what());
             return;
@@ -199,10 +204,10 @@ void getExchangePose(const sensor_msgs::ImageConstPtr &msg){
         pose.pose.position.x = tvec.at<float>(0, 0);
         pose.pose.position.y = tvec.at<float>(1, 0);
         pose.pose.position.z = tvec.at<float>(2, 0);
-        pose.pose.orientation.x = q.x();
-        pose.pose.orientation.y = q.y();
-        pose.pose.orientation.z = q.z();
-        pose.pose.orientation.w = q.w();
+        pose.pose.orientation.x = rvec.at<double>(0, 2) * _sin;
+        pose.pose.orientation.y = -rvec.at<double>(0, 0) * _sin;
+        pose.pose.orientation.z = -rvec.at<double>(0, 1) * _sin;
+        pose.pose.orientation.w = cos(theta * 0.5);;
         pointPub.publish(pose);
 
 //    if (ifShow || ifPub) {
