@@ -1,10 +1,10 @@
 if_red: True
 is_record: False
-if_show: False
+if_show: True
 if_pub: True
-threshold: 20
+threshold: 60
 exposure: 10
-serial_name: /dev/ttyS5
+serial_name: /dev/ttyUSB0
 
 #camera: 2213
 CameraParams:

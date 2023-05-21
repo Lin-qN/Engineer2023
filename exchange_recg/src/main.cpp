@@ -12,19 +12,21 @@
 #include <cv_bridge/cv_bridge.h>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include <Eigen/Dense>
+#include <Eigen/StdVector>
 
 #include "exchange_recg/manager.h"
+
 #include "exchange_recg/square.h"
-
 using namespace std;
-using namespace cv;
 
+using namespace cv;
 ros::Subscriber imageSub;
 ros::Subscriber modeSub;
 ros::Publisher pointPub;
 ros::Publisher imagePub;
-ros::Publisher binPub;
 
+ros::Publisher binPub;
 Mat img, img2Show, imgBin;
 bool ifRed, ifShow, ifPub;
 int thresh;
@@ -32,6 +34,28 @@ Mat cameraMatrix, distCoeffs;
 vector<Point3d> realPoints;
 Point2d offset;
 ::uint8_t mode;
+
+const double PI =3.14159;
+static void toEulerAngle(const double x,const double y,const double z,const double w, double& roll, double& pitch, double& yaw)
+{
+    // roll (x-axis rotation)
+    double sinr_cosp = +2.0 * (w * x + y * z);
+    double cosr_cosp = +1.0 - 2.0 * (x * x + y * y);
+    roll = atan2(sinr_cosp, cosr_cosp);
+
+    // pitch (y-axis rotation)
+    double sinp = +2.0 * (w * y - z * x);
+    if (fabs(sinp) >= 1)
+        pitch = copysign(M_PI / 2, sinp); // use 90 degrees if out of range
+    else
+        pitch = asin(sinp);
+
+    // yaw (z-axis rotation)
+    double siny_cosp = +2.0 * (w * z + x * y);
+    double cosy_cosp = +1.0 - 2.0 * (y * y + z * z);
+    yaw = atan2(siny_cosp, cosy_cosp);
+    //    return yaw;
+}
 
 void addImageOffset(vector<Point2d> &points) {
     for (auto &p: points) {
@@ -122,7 +146,7 @@ inline void getQuaternion(Mat R, double Q[]) {
 void getExchangePose(const sensor_msgs::ImageConstPtr &msg){
     //convert ROS image msg to opencv Mat
     try {
-        img = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::BGR8)->image.clone();
+        img = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::BGR8)->image;
         // markSensor->imgTime = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::BGR8)->header.stamp;
     }
     catch (cv_bridge::Exception &e) {
@@ -166,8 +190,8 @@ void getExchangePose(const sensor_msgs::ImageConstPtr &msg){
         return;
     }
 
-    double theta;
-    double _sin;
+    double theta, _sin, roll, pitch, yaw;
+    Eigen::Vector3d euler;
     if (!man.empty()) {
         square s = man.getSquare(0);
         cout << "aux num: " << s.aux << endl;
@@ -187,13 +211,21 @@ void getExchangePose(const sensor_msgs::ImageConstPtr &msg){
 
             cout << rvec << endl;
             theta = cv::norm(rvec);
-            Eigen::Quaterniond _quat;
-//            _quat.w() = cos(theta * 0.5);
+
             _sin = sin(theta * 0.5) / theta;
-//            _quat.x() = rvec.at<double>(0, 2) * _sin;
-//            _quat.y() = -rvec.at<double>(0, 0) * _sin;
-//            _quat.z() = -rvec.at<double>(0, 1) * _sin;
-//            auto angles = ToEulerAngles(_quat);
+            q.w() = cos(theta * 0.5);
+            q.x() = rvec.at<double>(0, 2) * _sin;
+            q.y() = -rvec.at<double>(0, 0) * _sin;
+            q.z() = -rvec.at<double>(0, 1) * _sin;
+            euler = q.toRotationMatrix().eulerAngles(2, 1, 0);
+            cout << "Quaterniond2Euler result is:" <<endl;
+            cout << "x = "<< euler[2]*180/PI << endl ;
+            cout << "y = "<< euler[1]*180/PI << endl ;
+            cout << "z = "<< euler[0]*180/PI << endl << endl;
+
+//            toEulerAngle(q.x(),q.y(),q.z(),q.w(),roll,pitch,yaw);
+//            cout<<roll*180/PI<<endl<<pitch*180/PI<<endl<<yaw*180/PI<<endl;
+
         } catch (cv::Exception &e) {
             ROS_ERROR("opencv exception: %s", e.what());
             return;
@@ -204,10 +236,10 @@ void getExchangePose(const sensor_msgs::ImageConstPtr &msg){
         pose.pose.position.x = tvec.at<float>(0, 0);
         pose.pose.position.y = tvec.at<float>(1, 0);
         pose.pose.position.z = tvec.at<float>(2, 0);
-        pose.pose.orientation.x = rvec.at<double>(0, 2) * _sin;
-        pose.pose.orientation.y = -rvec.at<double>(0, 0) * _sin;
-        pose.pose.orientation.z = -rvec.at<double>(0, 1) * _sin;
-        pose.pose.orientation.w = cos(theta * 0.5);;
+        pose.pose.orientation.x = euler[2]*180/PI;
+        pose.pose.orientation.y = euler[1]*180/PI;
+        pose.pose.orientation.z = euler[0]*180/PI;
+        pose.pose.orientation.w = 0;
         pointPub.publish(pose);
 
 //    if (ifShow || ifPub) {
