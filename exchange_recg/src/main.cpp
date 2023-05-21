@@ -36,6 +36,25 @@ Point2d offset;
 ::uint8_t mode;
 
 const double PI =3.14159;
+
+void rotate(Mat& image, Mat& result, int angle)
+{
+    Mat M;
+    int w = image.cols;
+    int h = image.rows;
+    M = getRotationMatrix2D(Point2f(w / 2, h / 2), angle, 1.0);
+    double cos = abs(M.at<double>(0, 0));
+    double sin = abs(M.at<double>(0, 1));
+    int nw = cos * w + sin * h;
+    int nh = sin * w + cos * h;
+//    std::cout << M << std::endl;
+    M.at<double>(0, 2) += (nw / 2 - w / 2);
+    M.at<double>(1, 2) += (nh / 2 - h / 2);
+//    std::cout << M << std::endl;
+    warpAffine(image, result, M, Size(nw, nh), INTER_LINEAR, 0, Scalar(0, 0, 0));
+    //imshow("旋转演示", result);
+}
+
 static void toEulerAngle(const double x,const double y,const double z,const double w, double& roll, double& pitch, double& yaw)
 {
     // roll (x-axis rotation)
@@ -147,13 +166,7 @@ void getExchangePose(const sensor_msgs::ImageConstPtr &msg){
     try {
         //convert ROS image msg to opencv Mat
         img = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::BGR8)->image;
-        double angle = 180;
-        // get the center coordinates of the image to create the 2D rotation matrix
-        Point2f center((img.cols - 1) / 2.0, (img.rows - 1) / 2.0);
-        // using getRotationMatrix2D() to get the rotation matrix
-        Mat rotation_matix = getRotationMatrix2D(center, angle, 1.0);
-        // rotate the image using warpAffine
-        warpAffine(img, img, rotation_matix, img.size());
+        rotate(img, img, 90);
     }
     catch (cv_bridge::Exception &e) {
         ROS_ERROR("cv_bridge exception: %s", e.what());
