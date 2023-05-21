@@ -144,10 +144,16 @@ inline void getQuaternion(Mat R, double Q[]) {
 }
 
 void getExchangePose(const sensor_msgs::ImageConstPtr &msg){
-    //convert ROS image msg to opencv Mat
     try {
+        //convert ROS image msg to opencv Mat
         img = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::BGR8)->image;
-        // markSensor->imgTime = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::BGR8)->header.stamp;
+        double angle = 180;
+        // get the center coordinates of the image to create the 2D rotation matrix
+        Point2f center((img.cols - 1) / 2.0, (img.rows - 1) / 2.0);
+        // using getRotationMatrix2D() to get the rotation matrix
+        Mat rotation_matix = getRotationMatrix2D(center, angle, 1.0);
+        // rotate the image using warpAffine
+        warpAffine(img, img, rotation_matix, img.size());
     }
     catch (cv_bridge::Exception &e) {
         ROS_ERROR("cv_bridge exception: %s", e.what());
